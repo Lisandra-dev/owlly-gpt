@@ -1,31 +1,39 @@
 import asyncio
-import logging
 import textwrap
 from typing import Optional, cast
 
 import discord
 from base import Message
-from completion import generate_completion_response, parse_thread_name, process_response
 from constants import (
     ACTIVATE_THREAD_PREFX,
     SECONDS_DELAY_RECEIVING_MSG,
 )
 from discord import Message as DiscordMessage
-from parse_model import create_model_commands, get_models_completion
-from personas import get_persona, get_persona_by_emoji, update_persona_models
-from system_message import create_system_message, get_system_message
+from rich.console import Console
 from tiktoken import Encoding
-from utils import (
-    allowed_thread,
-    close_thread,
+from utils.completion import (
+    generate_completion_response,
+    parse_thread_name,
+    process_response,
+)
+from utils.messages import (
     count_token_message,
     generate_initial_system,
     is_last_message_stale,
-    send_to_log_channel,
-    should_block,
 )
+from utils.parse_model import create_model_commands, get_models_completion
+from utils.personas import (
+    create_system_message,
+    get_persona,
+    get_persona_by_emoji,
+    get_system_message,
+    update_persona_models,
+)
+from utils.threads import allowed_thread, close_thread, should_block
+from utils.utils import send_to_log_channel
 
-logger = logging.getLogger(__name__)
+console = Console()
+error = Console(stderr=True, style="bold red")
 
 
 async def start_chat_thread(  # noqa
@@ -55,7 +63,7 @@ async def start_chat_thread(  # noqa
             persona_system = create_system_message(persona_system, system_message)
             message_content = ""
             if not persona_system.system == original_persona.system:
-                message_content = "**__System Message__**:\n> {persona_system.system}"
+                message_content = f"**__System Message__**:\n> {persona_system.system}"
             embed = discord.Embed(
                 title=f"{persona_system.icon} {persona_system.title}",
                 description=f"<@{user.id}> started a new chat",
@@ -71,7 +79,7 @@ async def start_chat_thread(  # noqa
                 embed=embed,
             )
         except Exception as e:
-            logger.exception(e)
+            error.print_exception(show_locals=True)
             await follow_up.edit(content=f"Failed to start chat {str(e)}")
             return
 
@@ -90,7 +98,7 @@ async def start_chat_thread(  # noqa
                 .replace("\n", " ")
                 .replace("__", "")
             )  # remove newlines
-            logger.info(f"Thread created - {user.global_name}: {message}")
+            console.log(f"Thread created - {user.global_name}: {message}")
 
             await send_to_log_channel(
                 client,
@@ -113,7 +121,7 @@ async def start_chat_thread(  # noqa
             await process_response(thread=thread, response_data=response_data)
 
     except Exception as e:
-        logger.error(e)
+        error.print_exception(show_locals=True)
         await int.response.send_message(
             f"Failed to start chat {str(e)}", ephemeral=True
         )
@@ -135,7 +143,7 @@ async def chat_bot(
 
         thread = cast(discord.Thread, message.channel)
         persona_log = get_persona_by_emoji(thread)
-        models_completion = get_models_completion(thread, persona_log)
+        models_completion = await get_models_completion(thread, persona_log)
         persona_log = update_persona_models(persona_log, models_completion)
         persona_log = get_system_message(thread, persona_log)
         channel_messages = await generate_initial_system(client, thread, persona_log)
@@ -168,7 +176,7 @@ async def chat_bot(
                 # there is another message, so ignore this one
                 return
 
-        logger.info(
+        console.log(
             f"Thread message to process - {message.author}: {message.content[:50]} - {thread.name} {thread.jump_url}"
         )
 
@@ -187,5 +195,5 @@ async def chat_bot(
             return
         async with thread.typing():
             await process_response(thread=thread, response_data=response_data)
-    except Exception as e:
-        logger.exception(e)
+    except Exception:
+        error.print_exception(show_locals=True)

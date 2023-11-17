@@ -1,14 +1,16 @@
-import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import discord
 import yaml
 from base import OpenAIModel, Persona
 from constants import KNOWLEDGE_CUTOFF, OPENAI_DEFAULT_MODEL, SYSTEM_MESSAGE
 from discord import Thread
+from rich.console import Console
 
-logger = logging.getLogger(__name__)
+console = Console()
+error = Console(stderr=True, style="bold red")
 
 
 def open_persona():  # noqa
@@ -99,7 +101,7 @@ def generate_choice_persona() -> list[discord.app_commands.Choice]:
         persona_list.append(
             discord.app_commands.Choice(name=value.get("keywords"), value=persona)
         )
-    logger.info(f"persona_list: {persona_list}")
+    console.log(f"persona_list: {persona_list}")
     return persona_list
 
 
@@ -110,3 +112,34 @@ def get_all_icons() -> list[str]:
         icon_list.append(value.get("icon"))
     icon_list.append("🤖")
     return icon_list
+
+
+def get_system_message(thread: discord.Thread, persona: Persona) -> Persona:
+    first_message = thread.starter_message
+    if first_message:
+        content = first_message.content
+        if "**__System Message__**:\n>" in content:
+            return Persona(
+                name=persona.name,
+                title=persona.title,
+                icon=persona.icon,
+                color=persona.color,
+                system=content.replace("**__System Message__**:\n> ", ""),
+                model=persona.model,
+            )
+    return persona
+
+
+def create_system_message(
+    persona: Persona, system_message: Optional[str] = None
+) -> Persona:
+    if system_message:
+        return Persona(
+            name=persona.name,
+            title=persona.title,
+            icon=persona.icon,
+            color=persona.color,
+            system=system_message,
+            model=persona.model,
+        )
+    return persona
