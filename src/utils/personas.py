@@ -117,7 +117,7 @@ def get_all_icons() -> list[str]:
 async def get_system_message(thread: discord.Thread, persona: Persona) -> Persona:
     first_message = thread.starter_message
     if not first_message:
-        channel = cast(discord.TextChannel, thread)
+        channel = cast(discord.TextChannel, thread.parent)
         first_message = await channel.fetch_message(thread.id)
     if first_message:
         content = first_message.content
