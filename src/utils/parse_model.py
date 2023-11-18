@@ -132,7 +132,8 @@ async def edit_embed(  # noqa
         if model:
             msg = f"- Changed model to {model.name}\n"
         if message_system:
-            msg += f"\n- __System Message__:\n>>>{message_system.replace('__', '').replace('**', '')}"
+            msg_system = message_system.replace("**__System Message__**:\n> ", "")
+            msg += f"\n- __System Message__:\n>>>{msg_system}"
         if int:
             await int.response.send_message(msg, ephemeral=True)
         console.log(msg)

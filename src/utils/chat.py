@@ -145,7 +145,7 @@ async def chat_bot(
         persona_log = get_persona_by_emoji(thread)
         models_completion = await get_models_completion(thread, persona_log)
         persona_log = update_persona_models(persona_log, models_completion)
-        persona_log = get_system_message(thread, persona_log)
+        persona_log = await get_system_message(thread, persona_log)
         channel_messages = await generate_initial_system(client, thread, persona_log)
 
         nb_tokens: int = count_token_message(channel_messages, model)

@@ -62,7 +62,7 @@ class EditThread(commands.GroupCog, name="edit"):
         persona_system = get_persona(persona.value if persona else None)
         original_persona = persona_system
         persona_system = update_persona_models(persona_system, gpt_models)
-        system_message = get_system_message(thread, persona_system)
+        system_message = await get_system_message(thread, persona_system)
         sys_msg = ""
         if not system_message.system == original_persona.system:
             sys_msg = "**__System Message__**:\n> " + system_message.system
@@ -143,7 +143,7 @@ class EditThread(commands.GroupCog, name="edit"):
             return
         thread = cast(discord.Thread, int.channel)
         persona_system = get_persona_by_emoji(thread)
-        persona_system = get_system_message(thread, persona_system)
+        persona_system = await get_system_message(thread, persona_system)
 
         if not system:
             system = ""  # remove the system message and return to the original persona system message

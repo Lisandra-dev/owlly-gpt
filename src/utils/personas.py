@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast
 
 import discord
 import yaml
@@ -114,8 +114,11 @@ def get_all_icons() -> list[str]:
     return icon_list
 
 
-def get_system_message(thread: discord.Thread, persona: Persona) -> Persona:
+async def get_system_message(thread: discord.Thread, persona: Persona) -> Persona:
     first_message = thread.starter_message
+    if not first_message:
+        channel = cast(discord.TextChannel, thread)
+        first_message = await channel.fetch_message(thread.id)
     if first_message:
         content = first_message.content
         if "**__System Message__**:\n>" in content:
