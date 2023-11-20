@@ -58,11 +58,10 @@ async def start_chat_thread(  # noqa
         try:
             models_to_use = create_model_commands(model, persona)
             persona_system = get_persona(persona.value if persona else None)
-            original_persona = persona_system
             persona_system = update_persona_models(persona_system, models_to_use)
             persona_system = create_system_message(persona_system, system_message)
             message_content = ""
-            if not persona_system.system == original_persona.system:
+            if model:
                 message_content = f"**__System Message__**:\n> {persona_system.system}"
             embed = discord.Embed(
                 title=f"{persona_system.icon} {persona_system.title}",
