@@ -61,7 +61,7 @@ async def start_chat_thread(  # noqa
             persona_system = update_persona_models(persona_system, models_to_use)
             persona_system = create_system_message(persona_system, system_message)
             message_content = ""
-            if model:
+            if system_message:
                 message_content = f"**__System Message__**:\n> {persona_system.system}"
             embed = discord.Embed(
                 title=f"{persona_system.icon} {persona_system.title}",
